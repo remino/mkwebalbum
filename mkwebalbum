@@ -103,8 +103,10 @@ mkwebalbum_generate() {
 		_mk_preview_dir "$input_dir"
 		_is_image_file "$filepath" && _generate_preview "$input_dir" "$entry"
 
+		size="$( _get_file_size "$filepath" )"
+
 		_echo "$entry"
-		_html_entry "$entry" >> "$tmp_file"
+		_html_entry "$entry" "$size" >> "$tmp_file"
 	done
 
 	_html_footer >> "$tmp_file"
@@ -245,6 +247,10 @@ article > ul > li > a > figure > figcaption {
 	margin-top: 0.5rem;
 }
 
+article > ul > li > a > figure > figcaption > .file__size {
+	opacity: 0.6;
+}
+
 article > ul > li > a > figure > img {
 	display: block;
 	margin: auto;
@@ -324,8 +330,14 @@ _generate_preview() {
 	[ ! -f "$preview_file" ] && _fatal $e_no_preview "Cannot generate preview for: $file"
 }
 
+_get_file_size() {
+	# shellcheck disable=SC2012
+	ls -lah -- "$1" | awk '{ print $5 }'
+}
+
 _html_entry() {
 	file="$1"
+	size="$2"
 	preview_file="$PREVIEW_DIR/$file"
 
 	if ! _is_image_file "$file"
@@ -347,7 +359,10 @@ cat <<HTML
 	<a href="$file">
 		<figure>
 			<img class="$class" src="$preview_file" alt="$file">
-			<figcaption>$( echo "$file" | sed -E 's/\/$//' )</figcaption>
+			<figcaption>
+				<div class="file__name">$( echo "$file" | sed -E 's/\/$//' )</div>
+				<div class="file__size">$size</div>
+			</figcaption>
 		</figure>
 	</a>
 </li>
