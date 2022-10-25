@@ -22,13 +22,15 @@ mkwebalbum_main() {
 	scriptpath="$( readlink -f "$0" )"
 	scriptname="$( basename "$scriptpath" )"
 
+	exclude='^\.'
 	html_title=
 	list_all_files=0
 
-	while getopts ahtv opt
+	while getopts ae:htv opt
 	do
 		case $opt in
 			a) list_all_files=1 ;;
+			e) exclude="$OPTARG" ;;
 			h) cmd=help ;;
 			t) html_title="$OPTARG" ;;
 			v) cmd=version ;;
@@ -71,6 +73,8 @@ Requires awk and imagemagick.
 OPTIONS:
 
 	-a          List all files and sub-directions.
+	-e <regex>  Exclude files with name matching this regex.
+	            Defaults to '^\\.'.
 	-h          Show this help screen.
 	-t <title>  Specify HTML title. Defaults to name of <inputdir>.
 	-v          Show script name and version number.
@@ -99,6 +103,7 @@ mkwebalbum_generate() {
 
 		entry="$( basename "$filepath" )"
 
+		echo "$entry" | grep -q "$exclude" && continue
 		[ "$entry" = "$output_file" ] && continue
 
 		[ -d "$filepath" ] && entry="$entry/"
@@ -428,8 +433,8 @@ _is_image_file() {
 
 _list_files() {
 	dir="$1"
-	find "$dir" -maxdepth 1 -type d \! -iname ".*" | sort
-	find "$dir" -maxdepth 1 \! -type d \! -iname ".*" | sort
+	find "$dir" -maxdepth 1 -type d | sort
+	find "$dir" -maxdepth 1 \! -type d | sort
 }
 
 _mk_preview_dir() {
