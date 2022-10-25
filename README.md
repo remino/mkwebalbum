@@ -23,6 +23,7 @@ Create .htaccess file for Apache HTTPd to show a stylised directory index.
 
 ### Prerequisites
 
+- awk
 - [Imagemagick](https://imagemagick.org/index.php)
 
 ### Installation

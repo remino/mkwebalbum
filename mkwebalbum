@@ -65,6 +65,8 @@ the current directory is used.
 Outputs to index.html by default unless specified otherwise. Can also output to
 stdout if <outputfile> is specified as '-'.
 
+Requires awk and imagemagick.
+
 OPTIONS:
 
 	-a          List all files and sub-directions.
@@ -333,6 +335,7 @@ _generate_preview() {
 }
 
 _get_file_size() {
+	_require awk
 	# shellcheck disable=SC2012
 	ls -lah -- "$1" | awk '{ print $5 }'
 }
