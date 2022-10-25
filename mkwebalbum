@@ -1,0 +1,431 @@
+#!/bin/sh
+# mkwebalbum
+
+VERSION='1.0.0'
+
+IMG_FILE_TYPES='\.(bmp|git|jpe?g|png|tiff?)$'
+ICON_DIR='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDMzLjg2NyAzMy44NjciIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggc3R5bGU9ImNvbG9yOiMwMDA7ZmlsbDojMDAwO3N0cm9rZS13aWR0aDoxIiBkPSJNMy43MDUgMi45MWMtLjg3IDAtMS41ODguNzE4LTEuNTg4IDEuNTg4di41M2gtLjUyOUMuNzE4IDUuMDI3IDAgNS43NDQgMCA2LjYxNHYyMC42MzdjMCAuODcuNzE4IDEuNTg4IDEuNTg4IDEuNTg4aDMwLjY5Yy44NzEgMCAxLjU4OS0uNzE4IDEuNTg5LTEuNTg4VjYuNjE1YzAtLjg3LS43MTgtMS41ODgtMS41ODgtMS41ODhIMTQuODE3di0uNTNjMC0uODctLjcxNy0xLjU4Ny0xLjU4OC0xLjU4N0gzLjcwNXptMCAxLjA1OWg5LjUyNGMuMzAyIDAgLjUzLjIyNy41My41Mjl2LjUzSDMuMTc1di0uNTNjMC0uMzAyLjIyNy0uNTMuNTMtLjUzek0xLjU4OCA2LjA4NmgzMC42OWMuMzAzIDAgLjUzLjIyNy41My41M3YyMC42MzZjMCAuMzAyLS4yMjcuNTI5LS41My41MjlIMS41ODlhLjUxNy41MTcgMCAwIDEtLjUzLS41M1Y2LjYxNmMwLS4zMDIuMjI4LS41My41My0uNTN6Ii8+PC9zdmc+Cgo'
+ICON_FILE='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDMzLjg2NyAzMy44NjciIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggc3R5bGU9ImNvbG9yOiMwMDA7ZmlsbDojMDAwO3N0cm9rZS13aWR0aDoxIiBkPSJNNi42MTUgMGMtLjg3IDAtMS41ODguNzE4LTEuNTg4IDEuNTg4djMwLjY5YzAgLjg3MS43MTcgMS41ODkgMS41ODggMS41ODloMjAuNjM3Yy44NyAwIDEuNTg4LS43MTggMS41ODgtMS41ODhWOC40NjdsLTEuOC0xLjhMMjIuMTcyIDEuOGwtMS44LTEuOFptMCAxLjA1OGgxMi43djYuODhjMCAuODcuNzE3IDEuNTg3IDEuNTg3IDEuNTg3aDYuODc5djIyLjc1NGMwIC4zMDItLjIyNy41My0uNTMuNTNINi42MTZhLjUxNy41MTcgMCAwIDEtLjUzLS41M1YxLjU4OGMwLS4zMDIuMjI3LS41My41My0uNTN6bTEzLjc1Ny40MzkgMS4wNTEgMS4wNSA0Ljg2OSA0Ljg3IDEuMDUgMS4wNWgtNi40NGEuNTE3LjUxNyAwIDAgMS0uNTMtLjUzeiIvPjwvc3ZnPg'
+
+PREVIEW_DIR='.preview'
+
+mkwebalbum_main() {
+	trap _exit INT TERM
+
+	e_args=16
+	e_no_dir=17
+	e_no_preview=18
+	e_no_tmp=19
+
+	scriptinv="$( basename "$0" )"
+	scriptpath="$( readlink -f "$0" )"
+	scriptname="$( basename "$scriptpath" )"
+
+	html_title=
+	list_all_files=0
+
+	while getopts ahtv opt
+	do
+		case $opt in
+			a) list_all_files=1 ;;
+			h) cmd=help ;;
+			t) html_title="$OPTARG" ;;
+			v) cmd=version ;;
+			*) _invalid_opt ;;
+		esac
+	done
+
+	shift "$(( OPTIND - 1 ))"
+
+	[ -z "$cmd" ] && cmd="$1"
+	[ $# -gt 0 ] && shift
+
+	[ -z "$cmd" ] && cmd="generate"
+
+	case "$cmd" in
+		help|generate|version) "mkwebalbum_$cmd" "$@" ;;
+		*) _invalid_cmd ;;
+	esac
+
+	_exit
+}
+
+mkwebalbum_help() {
+cat <<USAGE
+$scriptname $VERSION
+
+USAGE: $scriptinv [<options>] [<inputdir>] [<outputfile>]
+
+Generate album Web page with previews from a directory of photos.
+
+Only the top-level directory is processed and only the image files are listed
+by default. Dot files and directories are ignored. If <inputdir> is not given,
+the current directory is used.
+
+Outputs to index.html by default unless specified otherwise. Can also output to
+stdout if <outputfile> is specified as '-'.
+
+OPTIONS:
+
+	-a          List all files and sub-directions.
+	-h          Show this help screen.
+	-t <title>  Specify HTML title. Defaults to name of <inputdir>.
+	-v          Show script name and version number.
+
+USAGE
+}
+
+mkwebalbum_generate() {
+	input_dir="$1"
+	[ -z "$input_dir" ] && input_dir="."
+	[ ! -d "$input_dir" ] && _fatal $e_no_dir "Input directory does not exist: $input_dir"
+
+	tmp_file="$( _mk_tmp_file )"
+
+	output_file="$2"
+	[ -z "$output_file" ] && output_file="index.html"
+	[ "$output_file" = "-" ] && output_file="/dev/stdout"
+
+	[ -z "$html_title" ] && html_title="$( basename "$( readlink -f "$input_dir" )" )"
+
+	_html_header > "$tmp_file"
+
+	_list_files "$input_dir" | while read -r filepath
+	do
+		[ $list_all_files -eq 0 ] && ( ! _is_image_file "$filepath" ) && continue
+
+		entry="$( basename "$filepath" )"
+
+		[ "$entry" = "$output_file" ] && continue
+
+		[ -d "$filepath" ] && entry="$entry/"
+
+		_mk_preview_dir "$input_dir"
+		_is_image_file "$filepath" && _generate_preview "$input_dir" "$entry"
+
+		_echo "$entry"
+		_html_entry "$entry" >> "$tmp_file"
+	done
+
+	_html_footer >> "$tmp_file"
+
+	cat "$tmp_file" > "$output_file"
+
+	_echo "$output_file"
+
+	rm "$tmp_file"
+}
+
+mkwebalbum_version() {
+	_echo "$scriptname $VERSION"
+}
+
+_css() {
+cat <<CSS
+:root {
+	--bg-color: #fff;
+	--fg-color: #000;
+	--link-color: #00f;
+	--link-color-visited: #00b;
+	--link-color-hover: #00b;
+	--link-color-active: #008;
+}
+
+a {
+	color: var(--link-color);
+	text-decoration: none;
+}
+
+a:hover {
+	color: var(--link-color-hover);
+	text-decoration: underline;
+}
+
+a:active {
+	color: var(--link-color-active);
+	text-decoration: underline;
+}
+
+a:visited {
+	color: var(--link-color-visited);
+	text-decoration: none;
+}
+
+article, h1 {
+	margin: 1rem 0;
+}
+
+article > ul {
+	display: grid;
+	gap: 1rem;
+	grid-auto-rows: 1fr;
+	grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+article > ul > li {
+	display: block;
+	width: 100%;
+}
+
+article > ul > li > a {
+	box-sizing: border-box;
+	color: inherit;
+	display: flex;
+	flex-flow: column nowrap;
+	height: 100%;
+	text-align: center;
+	width: 100%;
+}
+
+article > ul > li > a:focus,
+article > ul > li > a:hover {
+	color: inherit;
+	outline: none;
+	text-decoration: none;
+}
+
+article > ul > li > a:focus > figure,
+article > ul > li > a:hover > figure {
+	box-shadow: 0 0 0.1rem var(--fg-color);
+}
+
+article > ul > li > a:focus > figure::before,
+article > ul > li > a:hover > figure::before {
+	opacity: 0.1;
+}
+
+article > ul > li > a:focus > figure > figcaption,
+article > ul > li > a:hover > figure > figcaption {
+	overflow: visible;
+}
+
+article > ul > li > a > figure {
+	align-items: stretch;
+	border-radius: 1rem;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	justify-content: center;
+	margin: 0;
+	min-height: 10rem;
+	overflow: hidden;
+	padding: 1rem;
+	position: relative;
+	transition: all 0.1s ease-in-out;
+}
+
+article > ul > li > a > figure > figcaption {
+	flex-shrink: 1;
+	font-size: 0.8rem;
+	height: 2.6rem;
+	overflow-wrap: anywhere;
+	overflow: hidden;
+}
+
+article > ul > li > a > figure::before {
+	background-color: var(--fg-color);
+	bottom: 0;
+	content: '';
+	display: block;
+	left: 0;
+	opacity: 0;
+	position: absolute;
+	right: 0;
+	top: 0;
+	transition: all 0.1s ease-in-out;
+	z-index: -1;
+}
+
+article > ul > li > a > figure > figcaption {
+	flex-shrink: 1;
+	margin-top: 0.5rem;
+}
+
+article > ul > li > a > figure > img {
+	display: block;
+	margin: auto;
+	max-height: 10rem;
+	max-width: 100%;
+}
+
+body {
+	background-color: var(--bg-color);
+	color: var(--fg-color);
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-size: 1em;
+	line-height: 1.6;
+	margin: 0;
+	padding: 0;
+}
+
+h1 {
+	font-size: 1.6em;
+}
+
+main {
+	box-sizing: border-box;
+	margin: 0 1rem;
+}
+
+.icon--dir,
+.icon--file {
+	height: 4rem;
+	width: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg-color: #222;
+		--fg-color: #fff;
+		--link-color: #ccf;
+		--link-color-visited: #99b;
+		--link-color-hover: #99b;
+		--link-color-active: #995;
+	}
+
+	.icon--dir,
+	.icon--file {
+		filter: invert(1);
+	}
+}
+CSS
+}
+
+_echo() {
+	echo "$@"
+}
+
+_error() {
+	_echo "$@" >&2
+}
+
+_exit() {
+	exit_code=$?
+	exit $exit_code
+}
+
+_fatal() {
+	exit_code="$1"
+	shift
+	_error "$@"
+	exit "$exit_code"
+}
+
+_generate_preview() {
+	return # DELETEME
+	dir="$1"
+	file="$2"
+	preview_file="$dir/$PREVIEW_DIR/$file"
+	convert "$file" -resize 200x200 "$preview_file"
+	which image_optim >/dev/null && image_optim "$preview_file" > /dev/null 2>&1
+	[ ! -f "$preview_file" ] && _fatal $e_no_preview "Cannot generate preview for: $file"
+}
+
+_html_entry() {
+	file="$1"
+	preview_file="$PREVIEW_DIR/$file"
+
+	if ! _is_image_file "$file"
+	then
+		if [ -d "$file" ]
+		then
+			preview_file="$ICON_DIR"
+			class="icon--dir"
+		else
+			preview_file="$ICON_FILE"
+			class="icon--file"
+		fi
+	else
+		class="icon--image"
+	fi
+
+cat <<HTML
+<li>
+	<a href="$file">
+		<figure>
+			<img class="$class" src="$preview_file" alt="$file">
+			<figcaption>$( echo "$file" | sed -E 's/\/$//' )</figcaption>
+		</figure>
+	</a>
+</li>
+HTML
+}
+
+_html_footer() {
+cat <<HTML
+				</ul>
+			</article>
+		</main>
+	</body>
+</html>
+HTML
+}
+
+_html_header() {
+cat <<HTML
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>$html_title</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<style>
+			$( _css )
+		</style>
+	</head>
+	<body>
+		<main>
+			<header>
+				<h1>$html_title</h1>
+			</header>
+			<article>
+				<ul>
+HTML
+}
+
+_invalid_cmd() {
+	_error "Invalid command: $cmd"
+	_echo
+	mkwebalbum_help
+	exit $e_args
+}
+
+_invalid_opt() {
+	_error "Invalid option: $opt"
+	_echo
+	mkwebalbum_help
+	exit $e_args
+}
+
+_is_image_file() {
+	file="$1"
+	[ -f "$file" ] && echo "$file" | grep -E "$IMG_FILE_TYPES" > /dev/null 2>&1
+}
+
+_list_files() {
+	dir="$1"
+	find "$dir" -maxdepth 1 -type d \! -iname ".*" | sort
+	find "$dir" -maxdepth 1 \! -type d \! -iname ".*" | sort
+}
+
+_mk_preview_dir() {
+	dir="$1"
+	[ ! -d "$dir/$PREVIEW_DIR" ] && mkdir -p "$dir/$PREVIEW_DIR"
+
+cat <<HTACCESS > "$dir/$PREVIEW_DIR/.htaccess"
+Options -Indexes
+HTACCESS
+}
+
+_mk_tmp_file() {
+	tmpfile="$( mktemp -t "$scriptname.XXXXXX" )"
+	res=$?
+	[ $res -eq 0 ] || _fatal $e_no_tmp "Failed to create temporary file"
+	_echo "$tmpfile"
+}
+
+mkwebalbum_main "$@"

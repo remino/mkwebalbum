@@ -1,84 +1,85 @@
-template
-========
+mkwebalbum
+=========
 
-By Author <https://example.com>
+By Rémino Rem <https://remino.net/>
 
-Short description of app or project.
+Create .htaccess file for Apache HTTPd to show a stylised directory index.
 
-[Docs](https://example.com/)
-| [Demo](https://example.com/)
-| [Code](https://example.com/)
-| [Download](https://example.com/)
+[Code & Download](https://github.com/remino/mkwebalbum/)
 
-- [About](#about)
-	- [Built With](#built-with)
 - [Getting Started](#getting-started)
 	- [Prerequisites](#prerequisites)
 	- [Installation](#installation)
+		- [Using Homebrew on macOS](#using-homebrew-on-macos)
+		- [Using git](#using-git)
+		- [Using cURL](#using-curl)
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
-- [Contact](#contact)
-- [Acknowledgments](#acknowledgments)
 
 
 
-## About
-
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
-
-Longer description of product.
-
-[Back to top](#template)
-
-
-
-### Built With
-
-- [Node.js](https://nodejs.org/)
-- etc.
-
-[Back to top](#template)
-
-
-
-<!-- GETTING STARTED -->
 ## Getting Started
 
 ### Prerequisites
 
-* npm
-  ```sh
-  npm install npm@latest -g
-  ```
+- [Imagemagick](https://imagemagick.org/index.php)
 
 ### Installation
 
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
-    ```sh
-    git clone https://github.com/github_username/repo_name.git
-    ```
-3. Install NPM packages
-    ```sh
-    npm install
-    ```
-4. Enter your API in `config.js`
-    ```js
-    const API_KEY = 'ENTER YOUR API';
-    ```
+#### Using Homebrew on macOS
 
-[Back to top](#template)
+```sh
+brew tap remino/remino
+brew install mkwebalbum
+mkwebalbum -h
+```
+#### Using git
+
+```sh
+git clone https://github.com/remino/mkwebalbum.git
+cd mkwebalbum
+./mkwebalbum -h
+```
+
+#### Using cURL
+
+```sh
+curl -L https://github.com/remino/mkwebalbum/raw/main/mkwebalbum > mkwebalbum
+chmod +x mkwebalbum
+./mkwebalbum -h
+```
+
+[Back to top](#mkwebalbum)
 
 
 
 ## Usage
 
-Example usage of app or project.
+```
+mkwebalbum 1.0.0
 
-_For more examples, please refer to the [Documentation](https://example.com)_
+USAGE: mkwebalbum [<options>] [<inputdir>] [<outputfile>]
 
-[Back to top](#template)
+Generate album Web page with previews from a directory of photos.
+
+Only the top-level directory is processed and only the image files are listed
+by default. Dot files and directories are ignored. If <inputdir> is not given,
+the current directory is used.
+
+Outputs to index.html by default unless specified otherwise. Can also output to
+stdout if <outputfile> is specified as '-'.
+
+OPTIONS:
+
+	-a          List all files and sub-directions.
+	-h          Show this help screen.
+	-t <title>  Specify HTML title. Defaults to name of <inputdir>.
+	-v          Show script name and version number.
+
+```
+
+[Back to top](#mkwebalbum)
 
 
 
@@ -95,7 +96,7 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-[Back to top](#template)
+[Back to top](#mkwebalbum)
 
 
 
@@ -103,24 +104,4 @@ Don't forget to give the project a star! Thanks again!
 
 Distributed under the ISC License. See `LICENSE.txt` for more information.
 
-[Back to top](#template)
-
-
-
-## Contact
-
-Rémino Rem
-https://remino.net/
-
-[Back to top](#template)
-
-
-
-## Acknowledgments
-
-* []()
-* []()
-* []()
-
-[Back to top](#template)
-
+[Back to top](#mkwebalbum)
