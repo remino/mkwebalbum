@@ -25,13 +25,15 @@ mkwebalbum_main() {
 	exclude='^\.'
 	html_title=
 	list_all_files=0
+	regenerate_previews=0
 
-	while getopts ae:htv opt
+	while getopts ae:hrtv opt
 	do
 		case $opt in
 			a) list_all_files=1 ;;
 			e) exclude="$OPTARG" ;;
 			h) cmd=help ;;
+			r) regenerate_previews=1 ;;
 			t) html_title="$OPTARG" ;;
 			v) cmd=version ;;
 			*) _invalid_opt ;;
@@ -76,6 +78,7 @@ OPTIONS:
 	-e <regex>  Exclude files with name matching this regex.
 	            Defaults to '^\\.'.
 	-h          Show this help screen.
+	-r          Regenerate previews instead of skipping those that already exist.
 	-t <title>  Specify HTML title. Defaults to name of <inputdir>.
 	-v          Show script name and version number.
 
@@ -333,6 +336,7 @@ _generate_preview() {
 	dir="$1"
 	file="$2"
 	preview_file="$dir/$PREVIEW_DIR/$file"
+	[ $regenerate_previews -eq 0 ] && [ -f "$preview_file" ] && return 0
 	convert "$file" -resize 200x200 "$preview_file"
 	which image_optim >/dev/null && image_optim "$preview_file" > /dev/null 2>&1
 	[ ! -f "$preview_file" ] && _fatal $e_no_preview "Cannot generate preview for: $file"

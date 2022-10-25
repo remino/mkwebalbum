@@ -58,7 +58,7 @@ chmod +x mkwebalbum
 ## Usage
 
 ```
-mkwebalbum 1.0.0
+mkwebalbum 1.2.0
 
 USAGE: mkwebalbum [<options>] [<inputdir>] [<outputfile>]
 
@@ -71,10 +71,15 @@ the current directory is used.
 Outputs to index.html by default unless specified otherwise. Can also output to
 stdout if <outputfile> is specified as '-'.
 
+Requires awk and imagemagick.
+
 OPTIONS:
 
 	-a          List all files and sub-directions.
+	-e <regex>  Exclude files with name matching this regex.
+	            Defaults to '^\.'.
 	-h          Show this help screen.
+	-r          Regenerate previews instead of skipping those that already exist.
 	-t <title>  Specify HTML title. Defaults to name of <inputdir>.
 	-v          Show script name and version number.
 
