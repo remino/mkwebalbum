@@ -58,7 +58,7 @@ chmod +x mkwebalbum
 ## Usage
 
 ```
-mkwebalbum 1.2.0
+mkwebalbum 1.3.0
 
 USAGE: mkwebalbum [<options>] [<inputdir>] [<outputfile>]
 
