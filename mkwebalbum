@@ -204,7 +204,7 @@ article > ul > li > a:hover > figure > figcaption {
 
 article > ul > li > a > figure {
 	align-items: stretch;
-	border-radius: 1rem;
+	border-radius: 0.5rem;
 	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
