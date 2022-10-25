@@ -16,6 +16,7 @@ mkwebalbum_main() {
 	e_no_dir=17
 	e_no_preview=18
 	e_no_tmp=19
+	e_missing_app=20
 
 	scriptinv="$( basename "$0" )"
 	scriptpath="$( readlink -f "$0" )"
@@ -445,6 +446,24 @@ _mk_tmp_file() {
 	res=$?
 	[ $res -eq 0 ] || _fatal $e_no_tmp "Failed to create temporary file"
 	_echo "$tmpfile"
+}
+
+_require() {
+	missing_bin=0
+
+	for bin in "$@"
+	do
+		if ! which "$bin" > /dev/null 2>&1
+		then
+			missing_bin=1
+			_error "Required: $bin"
+		fi
+	done
+
+	if [ $missing_bin -ne 0 ]
+	then
+		_fatal "$e_missing_app" "One or more executables or apps are missing."
+	fi
 }
 
 mkwebalbum_main "$@"
