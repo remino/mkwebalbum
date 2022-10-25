@@ -1,5 +1,5 @@
 mkwebalbum
-=========
+==========
 
 By Rémino Rem <https://remino.net/>
 
