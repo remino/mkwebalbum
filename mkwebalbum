@@ -182,8 +182,10 @@ article > ul > li > a {
 	width: 100%;
 }
 
+article > ul > li > a:active,
 article > ul > li > a:focus,
-article > ul > li > a:hover {
+article > ul > li > a:hover,
+article > ul > li > a:visited {
 	color: inherit;
 	outline: none;
 	text-decoration: none;
